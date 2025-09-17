@@ -1,0 +1,29 @@
+services:
+  # Supabase services - disable external ports for security
+  analytics:
+    ports: !reset null
+
+  kong:
+    ports: !reset null
+
+  supavisor:
+    ports: !reset null
+
+  # Local AI services - no external ports in public mode
+  flowise:
+    ports: !reset null
+
+  open-webui:
+    ports: !reset null
+
+  n8n:
+    ports: !reset null
+
+  qdrant:
+    ports: !reset null
+
+  redis:
+    ports: !reset null
+
+  searxng:
+    ports: !reset null

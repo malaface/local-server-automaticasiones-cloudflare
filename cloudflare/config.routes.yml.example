@@ -1,0 +1,37 @@
+# Ejemplo de configuración para Cloudflare Tunnel - VERSIÓN CON RUTAS
+# Copia este archivo como config.yml y personaliza según tus necesidades
+# Esta configuración está optimizada para usar ai.tudominio.com/servicio
+
+tunnel: tu-tunnel-id-aqui
+credentials-file: /etc/cloudflared/credentials.json
+
+# Configuración de ingress - todas las rutas van al mismo destino
+# Caddy se encarga del routing interno basado en la ruta
+ingress:
+  # Todo el tráfico va a Caddy, que maneja el routing interno
+  - hostname: ai.tudominio.com
+    service: http://caddy:80
+    originRequest:
+      httpHostHeader: ai.tudominio.com
+      noTLSVerify: true
+
+  # Catch-all rule (debe ir al final)
+  - service: http_status:404
+
+# Configuración de logging
+loglevel: info
+
+# Configuración de métricas (opcional)
+metrics: 0.0.0.0:2000
+
+# Configuración adicional para optimización
+warp-routing:
+  enabled: false
+
+# Configuración de protocolos
+protocol: auto
+
+# Configuración de conexiones
+# Ajusta según tus necesidades de ancho de banda
+retries: 5
+grace-period: 30s

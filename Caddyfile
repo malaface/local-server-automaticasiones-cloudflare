@@ -1,0 +1,175 @@
+{
+    # Global options
+    email {$LETSENCRYPT_EMAIL}
+
+    # Security headers for all sites
+    header {
+        # Enable HSTS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # Prevent MIME type sniffing
+        X-Content-Type-Options "nosniff"
+        # XSS protection
+        X-Frame-Options "SAMEORIGIN"
+        # Referrer policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Remove server header
+        -Server
+    }
+}
+
+# n8n - Automatización y Workflows
+{$N8N_HOSTNAME} {
+    reverse_proxy n8n:5678 {
+        # Configuración específica para n8n
+        header_up Host {upstream_hostport}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+
+        # Timeouts largos para workflows complejos
+        timeout 300s
+    }
+
+    # Compresión para mejor rendimiento
+    encode gzip
+
+    # Logs específicos para n8n
+    log {
+        output file /var/log/caddy/n8n.log
+        level INFO
+    }
+}
+
+# Open WebUI - Interfaz de Chat AI
+{$WEBUI_HOSTNAME} {
+    reverse_proxy open-webui:8080 {
+        header_up Host {upstream_hostport}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    encode gzip
+
+    # Headers específicos para WebUI
+    header {
+        # Permitir conexiones WebSocket
+        Connection "Upgrade"
+        Upgrade "websocket"
+    }
+}
+
+# Flowise - Constructor de Agentes AI
+{$FLOWISE_HOSTNAME} {
+    reverse_proxy flowise:3001 {
+        header_up Host {upstream_hostport}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+
+        # Soporte para WebSockets
+        header_up Connection {>Connection}
+        header_up Upgrade {>Upgrade}
+    }
+
+    encode gzip
+}
+
+# Qdrant - Base de Datos Vectorial
+{$QDRANT_HOSTNAME} {
+    reverse_proxy qdrant:6333 {
+        header_up Host {upstream_hostport}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Headers adicionales para API
+    header {
+        Access-Control-Allow-Origin "*"
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Access-Control-Allow-Headers "Content-Type, Authorization"
+    }
+
+    encode gzip
+}
+
+# Supabase - Backend as a Service
+{$SUPABASE_HOSTNAME} {
+    reverse_proxy kong:8000 {
+        header_up Host {upstream_hostport}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+
+        # Timeouts más largos para operaciones de DB
+        timeout 60s
+    }
+
+    encode gzip
+}
+
+# SearXNG - Motor de Búsqueda Privado
+{$SEARXNG_HOSTNAME} {
+    encode zstd gzip
+
+    # Rutas específicas de SearXNG
+    @api {
+        path /config
+        path /healthz
+        path /stats/errors
+        path /stats/checker
+    }
+    @search {
+        path /search
+    }
+    @imageproxy {
+        path /image_proxy
+    }
+    @static {
+        path /static/*
+    }
+
+    # Headers de seguridad específicos para SearXNG
+    header {
+        # CSP estricto para SearXNG
+        Content-Security-Policy "upgrade-insecure-requests; default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; form-action 'self'; font-src 'self'; frame-ancestors 'self'; base-uri 'self'; connect-src 'self'; img-src * data:; frame-src https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com https://www.deezer.com https://www.mixcloud.com https://w.soundcloud.com https://embed.spotify.com;"
+        # Deshabilitar características del navegador
+        Permissions-Policy "accelerometer=(),camera=(),geolocation=(),gyroscope=(),magnetometer=(),microphone=(),payment=(),usb=()"
+        # Prevenir indexación
+        X-Robots-Tag "noindex, noarchive, nofollow"
+    }
+
+    # Headers específicos para API
+    header @api {
+        Access-Control-Allow-Methods "GET, OPTIONS"
+        Access-Control-Allow-Origin "*"
+    }
+
+    # Políticas de cache
+    route {
+        header Cache-Control "max-age=0, no-store"
+        header @search Cache-Control "max-age=5, private"
+        header @imageproxy Cache-Control "max-age=604800, public"
+        header @static Cache-Control "max-age=31536000, public, immutable"
+    }
+
+    reverse_proxy searxng:8080 {
+        header_up X-Forwarded-Port {http.request.port}
+        header_up X-Real-IP {http.request.remote.host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        # Configuración específica para SearXNG
+        header_up Connection "close"
+    }
+}
+
+# Importar configuraciones adicionales
+import /etc/caddy/addons/*.conf
+
+# Health check endpoint
+localhost:2019 {
+    handle /health {
+        respond "OK" 200
+    }
+}

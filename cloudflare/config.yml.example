@@ -1,0 +1,58 @@
+# Ejemplo de configuración para Cloudflare Tunnel
+# Copia este archivo como config.yml y personaliza según tus necesidades
+
+tunnel: tu-tunnel-id-aqui
+credentials-file: /etc/cloudflared/credentials.json
+
+# Configuración de ingress - rutas para cada servicio
+ingress:
+  # n8n - Automatización y workflows
+  - hostname: n8n.tudominio.com
+    service: http://caddy:80
+    originRequest:
+      httpHostHeader: n8n.tudominio.com
+      noTLSVerify: true
+
+  # Open WebUI - Interfaz de chat AI
+  - hostname: openwebui.tudominio.com
+    service: http://caddy:80
+    originRequest:
+      httpHostHeader: openwebui.tudominio.com
+      noTLSVerify: true
+
+  # Flowise - Constructor de agentes AI
+  - hostname: flowise.tudominio.com
+    service: http://caddy:80
+    originRequest:
+      httpHostHeader: flowise.tudominio.com
+      noTLSVerify: true
+
+  # Qdrant - Base de datos vectorial
+  - hostname: qdrant.tudominio.com
+    service: http://caddy:80
+    originRequest:
+      httpHostHeader: qdrant.tudominio.com
+      noTLSVerify: true
+
+  # Supabase - Backend as a service
+  - hostname: supabase.tudominio.com
+    service: http://caddy:80
+    originRequest:
+      httpHostHeader: supabase.tudominio.com
+      noTLSVerify: true
+
+  # SearXNG - Motor de búsqueda privado
+  - hostname: searxng.tudominio.com
+    service: http://caddy:80
+    originRequest:
+      httpHostHeader: searxng.tudominio.com
+      noTLSVerify: true
+
+  # Catch-all rule (debe ir al final)
+  - service: http_status:404
+
+# Configuración de logging
+loglevel: info
+
+# Configuración de métricas (opcional)
+metrics: 0.0.0.0:2000
