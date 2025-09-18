@@ -57,7 +57,7 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 
 ### 📁 Estructura
 ```
-local-ai-mejorado/
+local-server-automaticasiones-cloudflare/
 ├── docker-compose.yml
 ├── docker-compose.override.private.yml
 ├── docker-compose.override.public.yml

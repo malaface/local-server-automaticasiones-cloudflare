@@ -8,8 +8,8 @@
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/malaface/stack-ai-local-mejorado.git
-cd stack-ai-local-mejorado/local-server-automaticasiones-cloudflare
+git clone https://github.com/malaface/local-server-automaticasiones-cloudflare.git
+cd local-server-automaticasiones-cloudflare
 
 # 2. Ejecutar setup automático
 ./setup.sh
@@ -79,8 +79,8 @@ Si algo falla, instala lo que falte:
 
 ### 1. Clonar y Preparar
 ```bash
-git clone https://github.com/malaface/local-ai-mejorado.git
-cd local-ai-mejorado
+git clone https://github.com/malaface/local-server-automaticasiones-cloudflare.git
+cd local-server-automaticasiones-cloudflare
 cp .env.example .env
 ```
 

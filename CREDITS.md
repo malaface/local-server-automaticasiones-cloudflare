@@ -57,7 +57,7 @@ Todos los componentes mantienen sus licencias originales:
 Si quieres contribuir:
 
 1. **Al proyecto original**: [Local AI Packaged](https://github.com/coleam00/local-ai-packaged)
-2. **A esta optimización**: [Local AI Mejorado](https://github.com/malaface/local-ai-mejorado)
+2. **A esta optimización**: [Local Server Automatizaciones Cloudflare](https://github.com/malaface/local-server-automaticasiones-cloudflare)
 
 ## Agradecimientos Especiales
 

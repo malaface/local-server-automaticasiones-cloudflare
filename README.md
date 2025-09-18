@@ -102,8 +102,8 @@ Una solución completa y optimizada para ejecutar un stack de AI local con múlt
 ### 1. Clonar y Preparar
 ```bash
 # Clonar el repositorio
-git clone https://github.com/malaface/stack-ai-local-mejorado.git
-cd stack-ai-local-mejorado/local-ai-mejorado-cloudflare
+git clone https://github.com/malaface/local-server-automaticasiones-cloudflare.git
+cd local-server-automaticasiones-cloudflare
 
 # Crear archivo de configuración
 cp .env.example .env
@@ -908,7 +908,7 @@ tar xzf config_backup.tar.gz
 ## 🤝 Contribuir
 
 ### Reportar Issues
-1. Usar el [sistema de issues](https://github.com/malaface/stack-ai-local-mejorado/issues)
+1. Usar el [sistema de issues](https://github.com/malaface/local-server-automaticasiones-cloudflare/issues)
 2. Incluir información del sistema
 3. Incluir logs relevantes
 4. Especificar modo de deployment
@@ -943,7 +943,7 @@ Este proyecto está bajo la [Licencia MIT](LICENSE).
 
 ¿Problemas o preguntas?
 
-1. **Issues**: [GitHub Issues](https://github.com/malaface/stack-ai-local-mejorado/issues)
+1. **Issues**: [GitHub Issues](https://github.com/malaface/local-server-automaticasiones-cloudflare/issues)
 2. **Documentación**: Este README y documentos en `/docs`
 3. **Ejemplos**: Archivos `.example` en el repositorio
 
