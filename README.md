@@ -755,6 +755,75 @@ docker compose -p localai down
 docker compose -p localai down -v
 ```
 
+### Actualización de Contenedores
+
+#### Opción A: Script Automático (Recomendado) ⭐
+
+```bash
+# Actualización completa automática
+./update.sh
+
+# Detecta automáticamente el modo actual y actualiza todo
+# Incluye: imágenes principales, Supabase, Cloudflare, limpieza
+```
+
+#### Opción B: Comandos Manuales por Modo
+
+```bash
+# MODO LOCAL
+# Detener servicios
+docker compose -p localai -f docker-compose.yml down
+
+# Actualizar imágenes
+docker compose -p localai -f docker-compose.yml pull
+
+# Reiniciar servicios
+python3 start_services.py --mode local
+
+# MODO CADDY
+# Detener servicios
+docker compose -p localai -f docker-compose.yml --profile caddy down
+
+# Actualizar imágenes
+docker compose -p localai -f docker-compose.yml --profile caddy pull
+
+# Reiniciar servicios
+python3 start_services.py --mode caddy
+
+# MODO CLOUDFLARE
+# Detener servicios
+docker compose -p localai -f docker-compose.yml --profile cloudflare down
+
+# Actualizar imágenes
+docker compose -p localai -f docker-compose.yml --profile cloudflare pull
+
+# Reiniciar servicios
+python3 start_services.py --mode cloudflare
+
+# MODO FULL
+# Detener servicios
+docker compose -p localai -f docker-compose.yml --profile caddy --profile cloudflare down
+
+# Actualizar imágenes
+docker compose -p localai -f docker-compose.yml --profile caddy --profile cloudflare pull
+
+# Reiniciar servicios
+python3 start_services.py --mode full
+```
+
+#### Comandos Adicionales
+
+```bash
+# Actualizar solo servicios específicos
+docker compose -p localai pull n8n open-webui flowise
+
+# Actualizar solo Supabase
+cd supabase/docker && docker compose pull && cd ../..
+
+# Limpiar imágenes antiguas
+docker image prune -f
+```
+
 ### Monitoreo
 
 ```bash

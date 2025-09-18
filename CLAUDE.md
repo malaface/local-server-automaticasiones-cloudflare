@@ -51,6 +51,39 @@ docker compose -p localai down -v
 docker stats
 ```
 
+### Container Updates
+```bash
+# Automated update (recommended)
+./update.sh
+
+# Manual update by mode
+# LOCAL MODE:
+docker compose -p localai -f docker-compose.yml down
+docker compose -p localai -f docker-compose.yml pull
+python3 start_services.py --mode local
+
+# CADDY MODE:
+docker compose -p localai -f docker-compose.yml --profile caddy down
+docker compose -p localai -f docker-compose.yml --profile caddy pull
+python3 start_services.py --mode caddy
+
+# CLOUDFLARE MODE:
+docker compose -p localai -f docker-compose.yml --profile cloudflare down
+docker compose -p localai -f docker-compose.yml --profile cloudflare pull
+python3 start_services.py --mode cloudflare
+
+# FULL MODE:
+docker compose -p localai -f docker-compose.yml --profile caddy --profile cloudflare down
+docker compose -p localai -f docker-compose.yml --profile caddy --profile cloudflare pull
+python3 start_services.py --mode full
+
+# Update specific services only
+docker compose -p localai pull n8n open-webui flowise
+
+# Clean up old images
+docker image prune -f
+```
+
 ### Diagnostics
 ```bash
 # Check ports
@@ -90,8 +123,9 @@ docker compose -p localai logs -f
 
 ### Key Files
 - `setup.sh`: **New automated setup script** for remote servers/PuTTY users
+- `update.sh`: **New automated update script** for container management
 - `start_services.py`: Enhanced with validation and error handling
-- `.env.example`: Updated with all required variables
+- `.env.example`: Simplified with only essential variables
 - `README.md`: Comprehensive setup and usage guide
 - `INSTALL.md`: Updated with remote server specific instructions
 

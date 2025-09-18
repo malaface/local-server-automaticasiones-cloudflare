@@ -143,9 +143,29 @@ docker logs n8n -f
 # Detener todo
 docker compose -p localai down
 
-# Actualizar servicios
-docker compose -p localai pull
-python3 start_services.py
+# Actualizar servicios - SCRIPT AUTOMÁTICO ⭐
+./update.sh
+
+# Actualizar manualmente por modo específico
+# MODO LOCAL:
+docker compose -p localai -f docker-compose.yml down
+docker compose -p localai -f docker-compose.yml pull
+python3 start_services.py --mode local
+
+# MODO CADDY:
+docker compose -p localai -f docker-compose.yml --profile caddy down
+docker compose -p localai -f docker-compose.yml --profile caddy pull
+python3 start_services.py --mode caddy
+
+# MODO CLOUDFLARE:
+docker compose -p localai -f docker-compose.yml --profile cloudflare down
+docker compose -p localai -f docker-compose.yml --profile cloudflare pull
+python3 start_services.py --mode cloudflare
+
+# MODO FULL:
+docker compose -p localai -f docker-compose.yml --profile caddy --profile cloudflare down
+docker compose -p localai -f docker-compose.yml --profile caddy --profile cloudflare pull
+python3 start_services.py --mode full
 ```
 
 ## 🔧 Troubleshooting Específico para Servidores Remotos
