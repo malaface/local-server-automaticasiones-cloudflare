@@ -1,0 +1,47 @@
+include:
+  - ../../shared/docker-compose.base.yml
+
+services:
+  caddy:
+    image: caddy:2.7-alpine
+    restart: unless-stopped
+    container_name: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CLOUDFLARE_DOMAIN=${CLOUDFLARE_DOMAIN}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+      - caddy-logs:/var/log/caddy
+    depends_on:
+      - n8n
+      - open-webui
+      - flowise
+      - qdrant
+      - searxng
+      - supabase_auth
+
+  n8n:
+    <<: *service-n8n
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=db
+      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_POSTGRESDB_DATABASE=postgres
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_PERSONALIZATION_ENABLED=false
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_USER_MANAGEMENT_JWT_SECRET=${JWT_SECRET}
+      - WEBHOOK_URL=https://${CLOUDFLARE_DOMAIN}/n8n
+    depends_on:
+      - db
+
+volumes:
+  caddy-data:
+  caddy-config:
+  caddy-logs:

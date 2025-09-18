@@ -1,0 +1,110 @@
+include:
+  - ../supabase/docker/docker-compose.yml
+
+volumes:
+  n8n_storage:
+  qdrant_storage:
+  open-webui:
+  flowise:
+  valkey-data:
+  caddy-data:
+  caddy-config:
+
+x-n8n: &service-n8n
+  image: n8nio/n8n:latest
+  restart: unless-stopped
+  container_name: n8n
+  expose:
+    - 5678/tcp
+  environment:
+    - DB_TYPE=postgresdb
+    - DB_POSTGRESDB_HOST=db
+    - DB_POSTGRESDB_USER=postgres
+    - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+    - DB_POSTGRESDB_DATABASE=postgres
+    - N8N_DIAGNOSTICS_ENABLED=false
+    - N8N_PERSONALIZATION_ENABLED=false
+    - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+    - N8N_USER_MANAGEMENT_JWT_SECRET=${JWT_SECRET}
+    - WEBHOOK_URL=${N8N_HOSTNAME:+https://}${N8N_HOSTNAME:-http://localhost:5678}
+  volumes:
+    - n8n_storage:/home/node/.n8n
+    - "${DOCKER_SOCKET_LOCATION:-/var/run/docker.sock}:/var/run/docker.sock:ro,z"
+
+services:
+  flowise:
+    image: flowiseai/flowise
+    restart: unless-stopped
+    container_name: flowise
+    expose:
+      - 3001/tcp
+    environment:
+        - PORT=3001
+        - FLOWISE_USERNAME=${FLOWISE_USERNAME}
+        - FLOWISE_PASSWORD=${FLOWISE_PASSWORD}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+        - ~/.flowise:/root/.flowise
+    entrypoint: /bin/sh -c "sleep 3; flowise start"
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    restart: unless-stopped
+    container_name: open-webui
+    expose:
+      - 8080/tcp
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - open-webui:/app/backend/data
+      - "${DOCKER_SOCKET_LOCATION:-/var/run/docker.sock}:/var/run/docker.sock:ro,z"
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - WEBUI_SECRET_KEY=${SECRET_KEY_BASE}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    container_name: qdrant
+    expose:
+      - 6333/tcp
+      - 6334/tcp
+    volumes:
+      - qdrant_storage:/qdrant/storage:z
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
+
+  searxng:
+    container_name: searxng
+    image: searxng/searxng:latest
+    restart: unless-stopped
+    expose:
+      - 8080/tcp
+    volumes:
+      - ../searxng:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=https://${SEARXNG_HOSTNAME:-localhost}/
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "1"
+
+  valkey:
+    container_name: valkey
+    image: valkey/valkey:7-alpine
+    restart: unless-stopped
+    command: valkey-server --save 30 1 --loglevel warning
+    volumes:
+      - valkey-data:/data

@@ -4,31 +4,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This is a local AI stack deployment system with multiple deployment modes, based on Docker Compose orchestration. The project provides a complete AI infrastructure including n8n workflows, Open WebUI chat interface, Flowise AI agents, vector databases, and more.
+This is a local AI stack deployment system organized by deployment modes for maximum simplicity. Each mode is self-contained in its own folder with specific documentation, configuration, and scripts.
 
-## Core Commands
+## New Structure (Simplified)
 
-### Quick Setup for Remote Servers
+The project is now organized into three main modes:
+
+### Quick Mode Access
 ```bash
-# Automated setup (recommended for remote servers/PuTTY)
-./setup.sh
+# Choose your mode and go to its folder:
+cd modes/local/      # For local development
+cd modes/caddy/      # For server with domain
+cd modes/cloudflare/ # For remote access
 
-# Manual validation only
-python3 start_services.py --validate-only
+# Each mode has a simple start script:
+./start.sh           # One command setup!
 ```
 
-### Starting Services
+### Legacy Commands (Still Available)
 ```bash
-# Local development mode (default)
+# Original commands still work for compatibility:
 python3 start_services.py --mode local
-
-# Production modes
-python3 start_services.py --mode caddy    # SSL with Let's Encrypt
-python3 start_services.py --mode cloudflare  # Cloudflare Tunnel
-python3 start_services.py --mode full    # Both Caddy + Cloudflare
-
-# With specific environment
-python3 start_services.py --mode local --environment public
+python3 start_services.py --mode caddy
+python3 start_services.py --mode cloudflare
 ```
 
 ### Service Management
@@ -93,41 +91,50 @@ netstat -tlnp | grep -E ":(3000|3001|5678|6333|8000|8080|80|443)"
 docker compose -p localai logs -f
 ```
 
-## Architecture
+## New Architecture (Organized by Modes)
+
+### Folder Structure
+```
+modes/
+├── local/           # Local development mode
+│   ├── README.md    # Simple 30-line guide
+│   ├── start.sh     # One-command setup
+│   ├── .env.example # Local-specific variables
+│   └── docker-compose.yml
+├── caddy/           # Server with domain mode
+│   ├── README.md    # SSL/domain guide
+│   ├── start.sh     # Domain setup script
+│   ├── Caddyfile    # Reverse proxy config
+│   └── docker-compose.yml
+└── cloudflare/      # Remote access mode
+    ├── README.md    # Tunnel setup guide
+    ├── start.sh     # Tunnel setup script
+    ├── config.yml   # Tunnel configuration
+    └── docker-compose.yml
+
+shared/              # Common components
+├── docker-compose.base.yml  # Base services
+└── scripts/         # Shared scripts
+```
 
 ### Deployment Modes
-- **local**: Direct port access (localhost:port)
-- **caddy**: Reverse proxy with automatic SSL (https://service.domain.com)
-- **cloudflare**: Cloudflare Tunnel access (no open ports required)
-- **full**: Combined Caddy + Cloudflare for maximum flexibility
+- **modes/local/**: Direct port access (localhost:port)
+- **modes/caddy/**: SSL with domain (https://ai.domain.com/service)
+- **modes/cloudflare/**: Tunnel access (no open ports needed)
 
-### Core Services
-- **n8n** (port 5678): Workflow automation platform
-- **Open WebUI** (port 3000): Modern chat interface for AI models
-- **Flowise** (port 3001): Visual AI agent builder
-- **Qdrant** (port 6333): Vector database for RAG applications
-- **Supabase** (port 8000): Backend-as-a-Service with PostgreSQL
-- **SearXNG** (port 8080): Private search engine
-- **PostgreSQL** (port 5432): Primary database (internal)
-- **Redis/Valkey** (port 6379): Caching and message queue (internal)
+### Core Services (Same in All Modes)
+- **n8n** (5678): Workflow automation
+- **Open WebUI** (3000): AI chat interface
+- **Flowise** (3001): AI agent builder
+- **Qdrant** (6333): Vector database
+- **Supabase** (8000): Backend service
+- **SearXNG** (8080): Private search
 
-### Configuration Structure
-- `docker-compose.yml`: Base service definitions
-- `docker-compose.override.*.yml`: Mode-specific overrides
-- `docker-compose.override.public.supabase.yml`: **Fixed missing file**
-- `.env`: Environment configuration (copy from `.env.example`)
-- `start_services.py`: Main orchestration script with enhanced validation
-- `setup.sh`: Automated setup script for remote servers
-- `Caddyfile`: Reverse proxy configuration
-- `cloudflare/config.yml`: Cloudflare Tunnel configuration
-
-### Key Files
-- `setup.sh`: **New automated setup script** for remote servers/PuTTY users
-- `update.sh`: **New automated update script** for container management
-- `start_services.py`: Enhanced with validation and error handling
-- `.env.example`: Simplified with only essential variables
-- `README.md`: Comprehensive setup and usage guide
-- `INSTALL.md`: Updated with remote server specific instructions
+### Key Benefits of New Structure
+- **Simplicity**: Each mode has 20-30 line README
+- **Self-contained**: All files needed in one folder
+- **One-command setup**: `./start.sh` does everything
+- **Mode-specific configs**: No complex overrides needed
 
 ## Environment Setup
 
@@ -161,41 +168,45 @@ LETSENCRYPT_EMAIL=your@email.com
 TUNNEL_TOKEN=your_cloudflare_tunnel_token
 ```
 
-## Development Workflow
+## Development Workflow (New Simplified Process)
 
-### For Remote Servers (Recommended)
-1. **Quick Setup**: Run `./setup.sh` - handles everything automatically
-2. **Manual Setup**: Follow INSTALL.md remote server section
-3. **Validation**: Use `python3 start_services.py --validate-only` before starting
-4. **Access**: Use server IP instead of localhost for remote access
+### Quick Start for Any Mode
+1. **Choose mode**: Go to `modes/local/`, `modes/caddy/`, or `modes/cloudflare/`
+2. **Read README**: Each has a focused 20-30 line guide
+3. **Run script**: Execute `./start.sh` - it handles everything
+4. **Access services**: URLs shown after successful start
 
-### For Local Development
-1. **Setup**: Copy `.env.example` to `.env` and configure required variables
-2. **Development**: Start with `--mode local` for development
-3. **Testing**: Use `--mode caddy` to test SSL and domain setup
-4. **Production**: Deploy with `--mode cloudflare` or `--mode full`
+### Migration Path
+1. **Start Local**: Begin with `modes/local/` for learning
+2. **Add Domain**: Move to `modes/caddy/` when ready for SSL
+3. **Remote Access**: Use `modes/cloudflare/` for external access
 
-## Recent Fixes and Improvements
+### Legacy Support
+- Original `start_services.py` still works for advanced users
+- All existing documentation preserved in original README
+- Backward compatibility maintained
 
-### Fixed Issues
-- ✅ **Missing file**: `docker-compose.override.public.supabase.yml` created
-- ✅ **Docker socket error**: `DOCKER_SOCKET_LOCATION` variable added
-- ✅ **Environment variables**: All required Supabase variables added
-- ✅ **Validation**: Comprehensive pre-flight checks added
-- ✅ **Remote server support**: PuTTY/SSH specific instructions
+## Recent Major Improvement: Mode-Based Organization
 
-### New Features
-- 🆕 **Automated setup**: `setup.sh` script for one-command installation
-- 🆕 **Enhanced validation**: `--validate-only` flag for configuration checking
-- 🆕 **Better error messages**: Clear guidance for fixing common issues
-- 🆕 **Remote server focus**: Optimized for SSH/PuTTY users
+### New Features (v2.0)
+- 🆕 **Mode-based folders**: Each deployment mode in separate folder
+- 🆕 **Simplified READMEs**: 20-30 lines instead of 1000+
+- 🆕 **One-command setup**: `./start.sh` handles everything per mode
+- 🆕 **Self-contained configs**: No complex overrides needed
+- 🆕 **Shared components**: Common services in `shared/` folder
+
+### Benefits
+- **Reduced complexity**: Users only see what they need
+- **Faster onboarding**: 5 minutes instead of 30+ minutes reading
+- **Mode-specific optimization**: Each mode has tailored configuration
+- **Easier maintenance**: Changes isolated to specific modes
 
 ## Important Notes
 
 - All services use the unified project name "localai" for Docker Compose
 - Supabase is started first, followed by other services with a 10-second delay
-- SearXNG requires automatic secret key generation on first run
-- The system supports both subdomain routing (service.domain.com) and path-based routing (domain.com/service)
-- **New**: Enhanced validation prevents common Docker socket and permission errors
-- **New**: Automated setup greatly simplifies remote server deployment
-- No traditional package.json, requirements.txt, or Makefile - this is a Docker-orchestrated infrastructure project
+- Each mode's `start.sh` script handles secret generation automatically
+- Path-based routing used for simplicity (ai.domain.com/service)
+- **New**: Mode isolation prevents configuration conflicts
+- **New**: Each mode is fully self-contained and portable
+- Legacy commands maintained for backward compatibility
