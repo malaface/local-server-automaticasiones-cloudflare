@@ -168,23 +168,150 @@ def generate_searxng_secret_key():
         print("    $secretKey = -join ($randomBytes | ForEach-Object { \"{0:x2}\" -f $_ })")
         print("    (Get-Content searxng/settings.yml) -replace 'ultrasecretkey', $secretKey | Set-Content searxng/settings.yml")
 
-def validate_mode_requirements(mode):
-    """Validate that required files and environment variables exist for the selected mode."""
+def validate_basic_requirements():
+    """Validate basic requirements before starting any services."""
+    print("🔍 Validating basic requirements...")
+    
+    # Check if .env file exists
+    if not os.path.exists(".env"):
+        print("❌ Error: .env file not found!")
+        print("   Please copy .env.example to .env and configure it:")
+        print("   cp .env.example .env")
+        return False
+    
+    # Load environment variables from .env file
+    try:
+        with open(".env", "r") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ[key] = value
+    except Exception as e:
+        print(f"❌ Error reading .env file: {e}")
+        return False
+    
+    # Check critical environment variables
+    critical_vars = [
+        "POSTGRES_PASSWORD",
+        "JWT_SECRET", 
+        "DOCKER_SOCKET_LOCATION",
+        "SECRET_KEY_BASE"
+    ]
+    
+    missing_vars = []
+    for var in critical_vars:
+        if not os.getenv(var) or os.getenv(var).startswith("your_"):
+            missing_vars.append(var)
+    
+    if missing_vars:
+        print("❌ Error: Critical environment variables not configured:")
+        for var in missing_vars:
+            print(f"   - {var}")
+        print("\n💡 Quick fix - run these commands to generate secure values:")
+        print("echo 'POSTGRES_PASSWORD='$(openssl rand -base64 32) >> .env")
+        print("echo 'JWT_SECRET='$(openssl rand -hex 32) >> .env") 
+        print("echo 'SECRET_KEY_BASE='$(openssl rand -hex 64) >> .env")
+        print("echo 'DOCKER_SOCKET_LOCATION=/var/run/docker.sock' >> .env")
+        return False
+    
+    # Check Docker
+    try:
+        subprocess.run(["docker", "info"], capture_output=True, check=True)
+        print("✅ Docker is running")
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("❌ Error: Docker is not running or not installed!")
+        print("   Please start Docker service:")
+        print("   sudo systemctl start docker")
+        return False
+    
+    # Check Docker Compose
+    try:
+        subprocess.run(["docker", "compose", "version"], capture_output=True, check=True)
+        print("✅ Docker Compose is available")
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("❌ Error: Docker Compose is not installed!")
+        print("   Please install Docker Compose plugin")
+        return False
+    
+    # Check Docker permissions
+    try:
+        subprocess.run(["docker", "ps"], capture_output=True, check=True)
+        print("✅ Docker permissions are correct")
+    except subprocess.CalledProcessError:
+        print("❌ Error: Cannot run docker commands without sudo!")
+        print("   Add your user to docker group:")
+        print(f"   sudo usermod -aG docker {os.getenv('USER', 'youruser')}")
+        print("   Then logout and login again")
+        return False
+    
+    print("✅ Basic requirements validated successfully")
+    return True
+
+def validate_required_files(mode, environment):
+    """Validate that all required files exist for the selected mode and environment."""
+    print(f"🔍 Validating files for mode: {mode}, environment: {environment}")
+    
+    required_files = ["docker-compose.yml"]
+    
+    # Add mode-specific files
+    if mode == "local":
+        required_files.append("docker-compose.override.local.yml")
+    elif mode == "caddy":
+        required_files.extend(["docker-compose.override.caddy.yml", "Caddyfile"])
+    elif mode == "cloudflare":
+        required_files.extend(["docker-compose.override.cloudflare.yml"])
+    elif mode == "full":
+        required_files.extend([
+            "docker-compose.override.full.yml", 
+            "Caddyfile",
+            "docker-compose.override.caddy.yml",
+            "docker-compose.override.cloudflare.yml"
+        ])
+    
+    # Add environment-specific files
+    if environment == "private":
+        required_files.append("docker-compose.override.private.yml")
+    elif environment == "public":
+        required_files.extend([
+            "docker-compose.override.public.yml",
+            "docker-compose.override.public.supabase.yml"
+        ])
+    
+    # Check Cloudflare specific files
     if mode in ["cloudflare", "full"]:
-        # Check for Cloudflare Tunnel configuration
-        config_path = os.path.join("cloudflare", "config.yml")
-        credentials_path = os.path.join("cloudflare", "credentials.json")
+        cloudflare_files = [
+            "cloudflare/config.yml",
+            "cloudflare/credentials.json"
+        ]
+        required_files.extend(cloudflare_files)
+    
+    # Validate all files exist
+    missing_files = []
+    for file_path in required_files:
+        if not os.path.exists(file_path):
+            missing_files.append(file_path)
+    
+    if missing_files:
+        print("❌ Error: Required files missing:")
+        for file_path in missing_files:
+            print(f"   - {file_path}")
+            # Provide specific help for missing files
+            if file_path.startswith("cloudflare/"):
+                if "config.yml" in file_path:
+                    print(f"     Copy cloudflare/config.yml.example to {file_path}")
+                elif "credentials.json" in file_path:
+                    print(f"     Download from Cloudflare Dashboard to {file_path}")
+        return False
+    
+    print("✅ All required files found")
+    return True
 
-        if not os.path.exists(config_path):
-            print(f"❌ Error: {config_path} not found!")
-            print("   Copy cloudflare/config.yml.example to cloudflare/config.yml and configure it.")
-            return False
-
-        if not os.path.exists(credentials_path):
-            print(f"❌ Error: {credentials_path} not found!")
-            print("   Download your tunnel credentials from Cloudflare Dashboard.")
-            return False
-
+def validate_mode_requirements(mode):
+    """Validate that required environment variables exist for the selected mode."""
+    print(f"🔍 Validating requirements for {mode} mode...")
+    
+    if mode in ["cloudflare", "full"]:
         # Check for required environment variables
         tunnel_token = os.getenv("TUNNEL_TOKEN")
         cloudflare_domain = os.getenv("CLOUDFLARE_DOMAIN")
@@ -194,6 +321,20 @@ def validate_mode_requirements(mode):
             print("   Add TUNNEL_TOKEN=your_token to your .env file.")
             return False
 
+        if not cloudflare_domain:
+            print("❌ Error: CLOUDFLARE_DOMAIN environment variable not set!")
+            print("   Add CLOUDFLARE_DOMAIN=yourdomain.com to your .env file.")
+            return False
+    
+    if mode in ["caddy", "full"]:
+        letsencrypt_email = os.getenv("LETSENCRYPT_EMAIL")
+        cloudflare_domain = os.getenv("CLOUDFLARE_DOMAIN")
+        
+        if not letsencrypt_email:
+            print("❌ Error: LETSENCRYPT_EMAIL environment variable not set!")
+            print("   Add LETSENCRYPT_EMAIL=your@email.com to your .env file.")
+            return False
+            
         if not cloudflare_domain:
             print("❌ Error: CLOUDFLARE_DOMAIN environment variable not set!")
             print("   Add CLOUDFLARE_DOMAIN=yourdomain.com to your .env file.")
@@ -276,15 +417,32 @@ def main():
                       help='Modo de deployment: local (puertos directos), caddy (SSL automático), cloudflare (tunnel), full (caddy+cloudflare)')
     parser.add_argument('--environment', choices=['private', 'public'], default='private',
                       help='Environment para Supabase (default: private)')
+    parser.add_argument('--validate-only', action='store_true',
+                      help='Solo validar configuración sin iniciar servicios')
     args = parser.parse_args()
 
     print(f"🚀 Iniciando Stack AI Local Mejorado en modo: {args.mode}")
     print("=" * 60)
 
-    # Validate mode requirements
-    if not validate_mode_requirements(args.mode):
-        print("\n❌ Validation failed. Please fix the issues above before continuing.")
+    # Step 1: Validate basic requirements
+    if not validate_basic_requirements():
+        print("\n❌ Basic validation failed. Please fix the issues above before continuing.")
         sys.exit(1)
+
+    # Step 2: Validate required files
+    if not validate_required_files(args.mode, args.environment):
+        print("\n❌ File validation failed. Please fix the issues above before continuing.")
+        sys.exit(1)
+
+    # Step 3: Validate mode-specific requirements
+    if not validate_mode_requirements(args.mode):
+        print("\n❌ Mode validation failed. Please fix the issues above before continuing.")
+        sys.exit(1)
+    
+    # If only validation was requested, exit here
+    if args.validate_only:
+        print("\n✅ All validations passed! You can now run without --validate-only flag.")
+        sys.exit(0)
 
     clone_supabase_repo()
     prepare_supabase_env()
