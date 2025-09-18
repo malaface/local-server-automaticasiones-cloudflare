@@ -1,0 +1,94 @@
+# =============================================================================
+# Cloudflare Tunnel Configuration - Stack AI Local
+# Arquitectura: Internet → Cloudflare Tunnel → Docker Services (directo)
+# =============================================================================
+
+tunnel: tu-tunnel-id-aqui
+credentials-file: /etc/cloudflared/credentials.json
+
+# =============================================================================
+# Ingress Rules - Cada servicio tiene su subdominio
+# PERSONALIZAR: Reemplaza 'tudominio.com' con tu dominio real
+# =============================================================================
+ingress:
+  # n8n - Automatización y workflows
+  - hostname: n8n.tudominio.com
+    service: http://n8n:5678
+    originRequest:
+      httpHostHeader: n8n.tudominio.com
+      noTLSVerify: true
+
+  # Open WebUI - Interfaz de chat AI
+  - hostname: openwebui.tudominio.com
+    service: http://open-webui:8080
+    originRequest:
+      httpHostHeader: openwebui.tudominio.com
+      noTLSVerify: true
+
+  # Flowise - Constructor de agentes AI
+  - hostname: flowise.tudominio.com
+    service: http://flowise:3001
+    originRequest:
+      httpHostHeader: flowise.tudominio.com
+      noTLSVerify: true
+
+  # Qdrant - Base de datos vectorial
+  - hostname: qdrant.tudominio.com
+    service: http://qdrant:6333
+    originRequest:
+      httpHostHeader: qdrant.tudominio.com
+      noTLSVerify: true
+
+  # Supabase - Backend as a service
+  - hostname: supabase.tudominio.com
+    service: http://supabase_auth:3000
+    originRequest:
+      httpHostHeader: supabase.tudominio.com
+      noTLSVerify: true
+
+  # SearXNG - Motor de búsqueda privado
+  - hostname: searxng.tudominio.com
+    service: http://searxng:8080
+    originRequest:
+      httpHostHeader: searxng.tudominio.com
+      noTLSVerify: true
+
+  # =============================================================================
+  # PLANTILLA PARA NUEVOS SERVICIOS
+  # =============================================================================
+  #
+  # # Nuevo Servicio - Descripción
+  # - hostname: nuevo-servicio.tudominio.com
+  #   service: http://nuevo-servicio:puerto
+  #   originRequest:
+  #     httpHostHeader: nuevo-servicio.tudominio.com
+  #     noTLSVerify: true
+  #
+  # PASOS PARA AGREGAR UN SERVICIO:
+  # 1. Agregar el servicio a docker-compose.yml
+  # 2. Crear CNAME en Cloudflare: servicio.tudominio.com → TU-TUNNEL-ID.cfargotunnel.com
+  # 3. Descomenta y modifica la plantilla arriba
+  # 4. Reiniciar: docker restart cloudflared
+  # =============================================================================
+
+  # Catch-all rule (DEBE ir al final)
+  - service: http_status:404
+
+# =============================================================================
+# Configuración del tunnel
+# =============================================================================
+
+# Logging
+loglevel: info
+
+# Métricas (opcional)
+metrics: 0.0.0.0:2000
+
+# Configuración de transporte
+transport:
+  # Compresión para mejor rendimiento
+  compression: gzip
+
+  # Configuración de timeouts
+  dialDualStack: true
+  keepAlive: 30s
