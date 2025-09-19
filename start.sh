@@ -7,7 +7,7 @@
 
 set -e  # Salir en caso de error
 
-echo "🚀 Stack AI Local - Cloudflare Tunnel Directo"
+echo " Stack AI Local - Cloudflare Tunnel Directo"
 echo "==============================================="
 echo "Arquitectura: Internet → Cloudflare Tunnel → Docker Services"
 echo ""
@@ -16,38 +16,38 @@ echo ""
 # Verificaciones iniciales
 # =============================================================================
 
-echo "🔍 Verificando requisitos..."
+echo " Verificando requisitos..."
 
 # Verificar Docker
 if ! command -v docker &> /dev/null; then
-    echo "❌ Error: Docker no está instalado"
-    echo "💡 Instala Docker: https://docs.docker.com/get-docker/"
+    echo " Error: Docker no está instalado"
+    echo " Instala Docker: https://docs.docker.com/get-docker/"
     exit 1
 fi
 
 # Verificar Docker Compose
 if ! docker compose version &> /dev/null; then
-    echo "❌ Error: Docker Compose no está disponible"
-    echo "💡 Instala Docker Compose v2"
+    echo " Error: Docker Compose no está disponible"
+    echo " Instala Docker Compose v2"
     exit 1
 fi
 
 # Verificar permisos de Docker
 if ! docker ps &> /dev/null; then
-    echo "❌ Error: No tienes permisos para usar Docker"
-    echo "💡 Ejecuta: sudo usermod -aG docker $USER"
-    echo "💡 Luego reinicia sesión o ejecuta: newgrp docker"
+    echo " Error: No tienes permisos para usar Docker"
+    echo " Ejecuta: sudo usermod -aG docker $USER"
+    echo " Luego reinicia sesión o ejecuta: newgrp docker"
     exit 1
 fi
 
 # Verificar OpenSSL para generar secretos
 if ! command -v openssl &> /dev/null; then
-    echo "❌ Error: OpenSSL no está instalado"
-    echo "💡 Instala OpenSSL: sudo apt install openssl"
+    echo " Error: OpenSSL no está instalado"
+    echo " Instala OpenSSL: sudo apt install openssl"
     exit 1
 fi
 
-echo "✅ Todos los requisitos están cumplidos"
+echo " Todos los requisitos están cumplidos"
 
 # =============================================================================
 # Configuración del archivo .env
@@ -88,7 +88,7 @@ if ! grep -q "DOCKER_SOCKET_LOCATION=.\+" .env; then
     echo "DOCKER_SOCKET_LOCATION=/var/run/docker.sock" >> .env
 fi
 
-echo "✅ Variables de seguridad configuradas"
+echo " Variables de seguridad configuradas"
 
 # =============================================================================
 # Verificar configuración de Cloudflare
@@ -137,13 +137,13 @@ fi
 # Verificar configuración del tunnel
 if grep -q "tu-tunnel-id-aqui" config.yml || grep -q "tudominio.com" config.yml; then
     echo "⚠️  Por favor personaliza config.yml con tu tunnel ID y dominio reales"
-    echo "💡 Reemplaza:"
+    echo " Reemplaza:"
     echo "   - tu-tunnel-id-aqui → tu tunnel ID real"
     echo "   - tudominio.com → $CLOUDFLARE_DOMAIN"
     exit 1
 fi
 
-echo "✅ Configuración de Cloudflare verificada"
+echo " Configuración de Cloudflare verificada"
 
 # =============================================================================
 # Validación final antes de iniciar
@@ -154,19 +154,19 @@ echo "🔧 Validando configuración de Docker Compose..."
 
 # Validar sintaxis
 if ! docker compose config > /dev/null 2>&1; then
-    echo "❌ Error en la configuración de Docker Compose"
-    echo "🔍 Ejecuta: docker compose config"
+    echo " Error en la configuración de Docker Compose"
+    echo " Ejecuta: docker compose config"
     exit 1
 fi
 
-echo "✅ Configuración válida"
+echo " Configuración válida"
 
 # =============================================================================
 # Iniciar servicios
 # =============================================================================
 
 echo ""
-echo "🚀 Iniciando Stack AI Local..."
+echo " Iniciando Stack AI Local..."
 
 # Limpiar contenedores anteriores si existen
 if docker ps -a --format "table {{.Names}}" | grep -E "(n8n|cloudflared)" > /dev/null; then
@@ -193,7 +193,7 @@ docker compose up -d
 # =============================================================================
 
 echo ""
-echo "✅ ¡Stack AI Local iniciado exitosamente!"
+echo " ¡Stack AI Local iniciado exitosamente!"
 echo ""
 
 # Mostrar información de acceso
@@ -220,13 +220,13 @@ echo "  Detener todo:     docker compose down"
 echo ""
 
 # Verificar que los contenedores principales están ejecutándose
-echo "🔍 Verificando estado de servicios..."
+echo " Verificando estado de servicios..."
 sleep 5
 
 RUNNING_SERVICES=$(docker ps --format "table {{.Names}}" | grep -E "(n8n|cloudflared|open-webui|flowise)" | wc -l)
 
 if [ "$RUNNING_SERVICES" -ge 3 ]; then
-    echo "✅ Servicios principales están ejecutándose"
+    echo " Servicios principales están ejecutándose"
     echo ""
     echo "🎯 Próximos pasos:"
     echo "  1. Espera 2-3 minutos para que todo esté listo"

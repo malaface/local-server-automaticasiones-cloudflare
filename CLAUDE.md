@@ -39,31 +39,15 @@ docker compose -p localai down -v
 docker stats
 ```
 
-### Container Updates
+### Container Updates (Simplificado - Inspirado en coleam00/local-ai-packaged)
 ```bash
-# Automated update (recommended)
-./update.sh
+# Ultra-simplified update (recommended)
+./update.sh               # down → pull → start automatically
 
-# Manual update by mode
-# LOCAL MODE:
-docker compose -p localai -f docker-compose.yml down
-docker compose -p localai -f docker-compose.yml pull
-python3 start_services.py --mode local
-
-# CADDY MODE:
-docker compose -p localai -f docker-compose.yml --profile caddy down
-docker compose -p localai -f docker-compose.yml --profile caddy pull
-python3 start_services.py --mode caddy
-
-# CLOUDFLARE MODE:
-docker compose -p localai -f docker-compose.yml --profile cloudflare down
-docker compose -p localai -f docker-compose.yml --profile cloudflare pull
-python3 start_services.py --mode cloudflare
-
-# FULL MODE:
-docker compose -p localai -f docker-compose.yml --profile caddy --profile cloudflare down
-docker compose -p localai -f docker-compose.yml --profile caddy --profile cloudflare pull
-python3 start_services.py --mode full
+# Manual update (3 simple steps)
+docker compose -p localai down      # Stop all services
+docker compose -p localai pull      # Update all images
+./start.sh                          # Restart with current configuration
 
 # Update specific services only
 docker compose -p localai pull n8n open-webui flowise
@@ -137,7 +121,7 @@ CLOUDFLARE_DOMAIN=yourdomain.com
 
 # API Keys (OPTIONAL)
 OPENAI_API_KEY=sk-your_key
-ANTHROPIC_API_KEY=sk-ant-your_key
+GOOGLE_API_KEY=your_google_ai_studio_key    # Google AI Studio para OpenWebUI
 ```
 
 ## Development Workflow (Ultra-Simplified)
@@ -172,6 +156,20 @@ Simple, predictable, scalable.
 - **Performance focused**: Direct access eliminates proxy overhead
 - **Security first**: Cloudflare handles SSL, DDoS, and access control
 - **Developer friendly**: Predictable, simple, extensible
+
+## Latest Improvements (Inspired by coleam00/local-ai-packaged)
+
+### v3.1 - Update Process Simplification & API Migration
+- ✨ **Ultra-simplified updates**: `./update.sh` (down → pull → start automatically)
+- 🔄 **3-step manual updates**: `down` → `pull` → `start.sh`
+- 🤖 **Google AI Studio integration**: Replaced Anthropic with Google AI for OpenWebUI
+- 📦 **Better image management**: All services use `:latest` for auto-updates
+
+### Benefits of New Update Process
+- **Faster deployments**: No complex override file management
+- **Consistent workflow**: Same pattern as successful open-source projects
+- **Reduced errors**: Simplified command sequence eliminates mistakes
+- **Better maintenance**: One script handles entire update lifecycle
 
 ## Important Notes
 

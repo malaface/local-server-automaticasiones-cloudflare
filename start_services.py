@@ -170,11 +170,11 @@ def generate_searxng_secret_key():
 
 def validate_basic_requirements():
     """Validate basic requirements before starting any services."""
-    print("🔍 Validating basic requirements...")
+    print(" Validating basic requirements...")
     
     # Check if .env file exists
     if not os.path.exists(".env"):
-        print("❌ Error: .env file not found!")
+        print(" Error: .env file not found!")
         print("   Please copy .env.example to .env and configure it:")
         print("   cp .env.example .env")
         return False
@@ -188,7 +188,7 @@ def validate_basic_requirements():
                     key, value = line.split("=", 1)
                     os.environ[key] = value
     except Exception as e:
-        print(f"❌ Error reading .env file: {e}")
+        print(f" Error reading .env file: {e}")
         return False
     
     # Check critical environment variables
@@ -205,10 +205,10 @@ def validate_basic_requirements():
             missing_vars.append(var)
     
     if missing_vars:
-        print("❌ Error: Critical environment variables not configured:")
+        print(" Error: Critical environment variables not configured:")
         for var in missing_vars:
             print(f"   - {var}")
-        print("\n💡 Quick fix - run these commands to generate secure values:")
+        print("\n Quick fix - run these commands to generate secure values:")
         print("echo 'POSTGRES_PASSWORD='$(openssl rand -base64 32) >> .env")
         print("echo 'JWT_SECRET='$(openssl rand -hex 32) >> .env") 
         print("echo 'SECRET_KEY_BASE='$(openssl rand -hex 64) >> .env")
@@ -218,9 +218,9 @@ def validate_basic_requirements():
     # Check Docker
     try:
         subprocess.run(["docker", "info"], capture_output=True, check=True)
-        print("✅ Docker is running")
+        print(" Docker is running")
     except (subprocess.CalledProcessError, FileNotFoundError):
-        print("❌ Error: Docker is not running or not installed!")
+        print(" Error: Docker is not running or not installed!")
         print("   Please start Docker service:")
         print("   sudo systemctl start docker")
         return False
@@ -228,29 +228,29 @@ def validate_basic_requirements():
     # Check Docker Compose
     try:
         subprocess.run(["docker", "compose", "version"], capture_output=True, check=True)
-        print("✅ Docker Compose is available")
+        print(" Docker Compose is available")
     except (subprocess.CalledProcessError, FileNotFoundError):
-        print("❌ Error: Docker Compose is not installed!")
+        print(" Error: Docker Compose is not installed!")
         print("   Please install Docker Compose plugin")
         return False
     
     # Check Docker permissions
     try:
         subprocess.run(["docker", "ps"], capture_output=True, check=True)
-        print("✅ Docker permissions are correct")
+        print(" Docker permissions are correct")
     except subprocess.CalledProcessError:
-        print("❌ Error: Cannot run docker commands without sudo!")
+        print(" Error: Cannot run docker commands without sudo!")
         print("   Add your user to docker group:")
         print(f"   sudo usermod -aG docker {os.getenv('USER', 'youruser')}")
         print("   Then logout and login again")
         return False
     
-    print("✅ Basic requirements validated successfully")
+    print(" Basic requirements validated successfully")
     return True
 
 def validate_required_files(mode, environment):
     """Validate that all required files exist for the selected mode and environment."""
-    print(f"🔍 Validating files for mode: {mode}, environment: {environment}")
+    print(f" Validating files for mode: {mode}, environment: {environment}")
     
     required_files = ["docker-compose.yml"]
     
@@ -293,7 +293,7 @@ def validate_required_files(mode, environment):
             missing_files.append(file_path)
     
     if missing_files:
-        print("❌ Error: Required files missing:")
+        print(" Error: Required files missing:")
         for file_path in missing_files:
             print(f"   - {file_path}")
             # Provide specific help for missing files
@@ -304,12 +304,12 @@ def validate_required_files(mode, environment):
                     print(f"     Download from Cloudflare Dashboard to {file_path}")
         return False
     
-    print("✅ All required files found")
+    print(" All required files found")
     return True
 
 def validate_mode_requirements(mode):
     """Validate that required environment variables exist for the selected mode."""
-    print(f"🔍 Validating requirements for {mode} mode...")
+    print(f" Validating requirements for {mode} mode...")
     
     if mode in ["cloudflare", "full"]:
         # Check for required environment variables
@@ -317,12 +317,12 @@ def validate_mode_requirements(mode):
         cloudflare_domain = os.getenv("CLOUDFLARE_DOMAIN")
 
         if not tunnel_token:
-            print("❌ Error: TUNNEL_TOKEN environment variable not set!")
+            print(" Error: TUNNEL_TOKEN environment variable not set!")
             print("   Add TUNNEL_TOKEN=your_token to your .env file.")
             return False
 
         if not cloudflare_domain:
-            print("❌ Error: CLOUDFLARE_DOMAIN environment variable not set!")
+            print(" Error: CLOUDFLARE_DOMAIN environment variable not set!")
             print("   Add CLOUDFLARE_DOMAIN=yourdomain.com to your .env file.")
             return False
     
@@ -331,16 +331,16 @@ def validate_mode_requirements(mode):
         cloudflare_domain = os.getenv("CLOUDFLARE_DOMAIN")
         
         if not letsencrypt_email:
-            print("❌ Error: LETSENCRYPT_EMAIL environment variable not set!")
+            print(" Error: LETSENCRYPT_EMAIL environment variable not set!")
             print("   Add LETSENCRYPT_EMAIL=your@email.com to your .env file.")
             return False
             
         if not cloudflare_domain:
-            print("❌ Error: CLOUDFLARE_DOMAIN environment variable not set!")
+            print(" Error: CLOUDFLARE_DOMAIN environment variable not set!")
             print("   Add CLOUDFLARE_DOMAIN=yourdomain.com to your .env file.")
             return False
 
-    print(f"✅ All requirements for {mode} mode are satisfied.")
+    print(f" All requirements for {mode} mode are satisfied.")
     return True
 
 def check_and_fix_docker_compose_for_searxng():
@@ -411,38 +411,65 @@ def check_and_fix_docker_compose_for_searxng():
     except Exception as e:
         print(f"Error checking/modifying docker-compose.yml for SearXNG: {e}")
 
+def update_services():
+    """Update all container images following coleam00 approach: down -> pull -> start."""
+    print("Iniciando actualización de servicios...")
+    print("=" * 60)
+
+    # Step 1: Stop all services
+    print("Deteniendo servicios existentes...")
+    try:
+        run_command(["docker", "compose", "-p", "localai", "down"])
+        print("Servicios detenidos exitosamente")
+    except subprocess.CalledProcessError:
+        print("No hay servicios corriendo, continuando...")
+
+    # Step 2: Pull latest images
+    print("Actualizando imágenes de contenedores...")
+    run_command(["docker", "compose", "-p", "localai", "pull"])
+    print("Imágenes actualizadas exitosamente")
+
+    print("Actualización completada. Los servicios se reiniciarán automáticamente.")
+    print("=" * 60)
+
 def main():
     parser = argparse.ArgumentParser(description='Stack AI Local Mejorado con soporte para múltiples modos de deployment.')
-    parser.add_argument('--mode', choices=['local', 'caddy', 'cloudflare', 'full'], default='local',
+    parser.add_argument('--mode', choices=['local', 'caddy', 'cloudflare', 'full'], default='cloudflare',
                       help='Modo de deployment: local (puertos directos), caddy (SSL automático), cloudflare (tunnel), full (caddy+cloudflare)')
     parser.add_argument('--environment', choices=['private', 'public'], default='private',
                       help='Environment para Supabase (default: private)')
     parser.add_argument('--validate-only', action='store_true',
                       help='Solo validar configuración sin iniciar servicios')
+    parser.add_argument('--update', action='store_true',
+                      help='Actualizar imágenes de contenedores antes de iniciar servicios')
     args = parser.parse_args()
 
-    print(f"🚀 Iniciando Stack AI Local Mejorado en modo: {args.mode}")
+    print(f" Iniciando Stack AI Local Mejorado en modo: {args.mode}")
     print("=" * 60)
 
     # Step 1: Validate basic requirements
     if not validate_basic_requirements():
-        print("\n❌ Basic validation failed. Please fix the issues above before continuing.")
+        print("\n Basic validation failed. Please fix the issues above before continuing.")
         sys.exit(1)
 
     # Step 2: Validate required files
     if not validate_required_files(args.mode, args.environment):
-        print("\n❌ File validation failed. Please fix the issues above before continuing.")
+        print("\n File validation failed. Please fix the issues above before continuing.")
         sys.exit(1)
 
     # Step 3: Validate mode-specific requirements
     if not validate_mode_requirements(args.mode):
-        print("\n❌ Mode validation failed. Please fix the issues above before continuing.")
+        print("\n Mode validation failed. Please fix the issues above before continuing.")
         sys.exit(1)
     
     # If only validation was requested, exit here
     if args.validate_only:
-        print("\n✅ All validations passed! You can now run without --validate-only flag.")
+        print("\n All validations passed! You can now run without --validate-only flag.")
         sys.exit(0)
+
+    # If update was requested, do it first
+    if args.update:
+        update_services()
 
     clone_supabase_repo()
     prepare_supabase_env()
@@ -451,7 +478,9 @@ def main():
     generate_searxng_secret_key()
     check_and_fix_docker_compose_for_searxng()
 
-    stop_existing_containers()
+    # Only stop containers if not updating (update already stops them)
+    if not args.update:
+        stop_existing_containers()
 
     # Start Supabase first
     start_supabase(args.environment)
@@ -463,35 +492,35 @@ def main():
     # Then start the local AI services with the specified mode
     start_local_ai(args.mode, args.environment)
 
-    print(f"\n🎉 Stack AI Local Mejorado iniciado exitosamente en modo: {args.mode}")
+    print(f"\n Stack AI Local Mejorado iniciado exitosamente en modo: {args.mode}")
     print("=" * 60)
 
     if args.mode == "local":
-        print("📍 Servicios disponibles en:")
-        print("   • n8n: http://localhost:5678")
-        print("   • Open WebUI: http://localhost:3000")
-        print("   • Flowise: http://localhost:3001")
-        print("   • Qdrant: http://localhost:6333")
-        print("   • Supabase: http://localhost:8000")
-        print("   • SearXNG: http://localhost:8080")
+        print(" Servicios disponibles en:")
+        print("   - n8n: http://localhost:5678")
+        print("   - Open WebUI: http://localhost:3000")
+        print("   - Flowise: http://localhost:3001")
+        print("   - Qdrant: http://localhost:6333")
+        print("   - Supabase: http://localhost:8000")
+        print("   - SearXNG: http://localhost:8080")
     elif args.mode in ["caddy", "cloudflare", "full"]:
         domain = os.getenv("CLOUDFLARE_DOMAIN", "tudominio.com")
         if args.mode == "caddy":
-            print("📍 Servicios disponibles en:")
-            print(f"   • n8n: https://n8n.{domain}")
-            print(f"   • Open WebUI: https://openwebui.{domain}")
-            print(f"   • Flowise: https://flowise.{domain}")
-            print(f"   • Qdrant: https://qdrant.{domain}")
-            print(f"   • Supabase: https://supabase.{domain}")
-            print(f"   • SearXNG: https://searxng.{domain}")
+            print(" Servicios disponibles en:")
+            print(f"   - n8n: https://n8n.{domain}")
+            print(f"   - Open WebUI: https://openwebui.{domain}")
+            print(f"   - Flowise: https://flowise.{domain}")
+            print(f"   - Qdrant: https://qdrant.{domain}")
+            print(f"   - Supabase: https://supabase.{domain}")
+            print(f"   - SearXNG: https://searxng.{domain}")
         else:
-            print("🌐 Servicios disponibles a través de Cloudflare Tunnel:")
-            print(f"   • n8n: https://n8n.{domain}")
-            print(f"   • Open WebUI: https://openwebui.{domain}")
-            print(f"   • Flowise: https://flowise.{domain}")
-            print(f"   • Qdrant: https://qdrant.{domain}")
-            print(f"   • Supabase: https://supabase.{domain}")
-            print(f"   • SearXNG: https://searxng.{domain}")
+            print(" Servicios disponibles a través de Cloudflare Tunnel:")
+            print(f"   - n8n: https://n8n.{domain}")
+            print(f"   - Open WebUI: https://openwebui.{domain}")
+            print(f"   - Flowise: https://flowise.{domain}")
+            print(f"   - Qdrant: https://qdrant.{domain}")
+            print(f"   - Supabase: https://supabase.{domain}")
+            print(f"   - SearXNG: https://searxng.{domain}")
 
 if __name__ == "__main__":
     main()

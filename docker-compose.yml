@@ -24,12 +24,18 @@ services:
       - ./config.yml:/etc/cloudflared/config.yml:ro
       - cloudflared-data:/etc/cloudflared
     depends_on:
-      - n8n
-      - open-webui
-      - flowise
-      - qdrant
-      - searxng
-      - supabase_auth
+      n8n:
+        condition: service_healthy
+      open-webui:
+        condition: service_started
+      flowise:
+        condition: service_started
+      qdrant:
+        condition: service_healthy
+      searxng:
+        condition: service_started
+      supabase_auth:
+        condition: service_started
 
   # =============================================================================
   # Servicios AI - Acceso directo via Cloudflare Tunnel
@@ -58,7 +64,14 @@ services:
       - n8n_storage:/home/node/.n8n
       - "${DOCKER_SOCKET_LOCATION:-/var/run/docker.sock}:/var/run/docker.sock:ro,z"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # Open WebUI - AI chat interface
   open-webui:
@@ -74,7 +87,7 @@ services:
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
       - WEBUI_SECRET_KEY=${SECRET_KEY_BASE}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
 
   # Flowise - AI agent builder
   flowise:
@@ -102,6 +115,12 @@ services:
       - QDRANT__SERVICE__HTTP_PORT=6333
       - QDRANT__SERVICE__GRPC_PORT=6334
       - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6333/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # SearXNG - Private search engine
   searxng:
