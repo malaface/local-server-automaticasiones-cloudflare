@@ -8,6 +8,9 @@ volumes:
   flowise:
   valkey-data:
   cloudflared-data:
+  # Caddy volumes (uncomment if using Caddy)
+  # caddy_data:
+  # caddy_config:
 
 services:
   # =============================================================================
@@ -151,3 +154,40 @@ services:
     command: valkey-server --save 30 1 --loglevel warning
     volumes:
       - valkey-data:/data
+
+  # =============================================================================
+  # CADDY (OPCIONAL) - Proxy reverso con SSL automático
+  # Descomenta para usar Caddy en lugar de/junto con Cloudflare Tunnel
+  # Ideal para dominios compartidos entre múltiples servidores
+  # =============================================================================
+
+  # caddy:
+  #   image: caddy:2-alpine
+  #   restart: unless-stopped
+  #   container_name: caddy
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./Caddyfile:/etc/caddy/Caddyfile:ro
+  #     - caddy_data:/data
+  #     - caddy_config:/config
+  #   environment:
+  #     - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+  #     - N8N_HOSTNAME=${N8N_SUBDOMAIN}.${CLOUDFLARE_DOMAIN}
+  #     - WEBUI_HOSTNAME=${OPENWEBUI_SUBDOMAIN}.${CLOUDFLARE_DOMAIN}
+  #     - FLOWISE_HOSTNAME=${FLOWISE_SUBDOMAIN}.${CLOUDFLARE_DOMAIN}
+  #     - QDRANT_HOSTNAME=${QDRANT_SUBDOMAIN}.${CLOUDFLARE_DOMAIN}
+  #     - SUPABASE_HOSTNAME=${SUPABASE_SUBDOMAIN}.${CLOUDFLARE_DOMAIN}
+  #     - SEARXNG_HOSTNAME=${SEARXNG_SUBDOMAIN}.${CLOUDFLARE_DOMAIN}
+  #   depends_on:
+  #     n8n:
+  #       condition: service_healthy
+  #     open-webui:
+  #       condition: service_started
+  #     flowise:
+  #       condition: service_started
+  #     qdrant:
+  #       condition: service_healthy
+  #     searxng:
+  #       condition: service_started

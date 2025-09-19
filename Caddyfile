@@ -1,0 +1,110 @@
+# =============================================================================
+# Caddyfile - Stack AI Local con Cloudflare
+# Configuración para proxy reverso con SSL automático
+# =============================================================================
+
+{
+    # Global options - SSL automático con Let's Encrypt
+    email {$LETSENCRYPT_EMAIL}
+}
+
+# N8N - Workflow automation
+{$N8N_HOSTNAME} {
+    # Caddy maneja automáticamente SSL para dominios
+    reverse_proxy n8n:5678 {
+        header_up Host {upstream_hostport}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-For {remote_host}
+    }
+}
+
+# Open WebUI - AI chat interface
+{$WEBUI_HOSTNAME} {
+    reverse_proxy open-webui:8080 {
+        header_up Host {upstream_hostport}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-For {remote_host}
+    }
+}
+
+# Flowise - AI agent builder
+{$FLOWISE_HOSTNAME} {
+    reverse_proxy flowise:3001 {
+        header_up Host {upstream_hostport}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-For {remote_host}
+    }
+}
+
+# Qdrant - Vector database
+{$QDRANT_HOSTNAME} {
+    reverse_proxy qdrant:6333 {
+        header_up Host {upstream_hostport}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-For {remote_host}
+    }
+}
+
+# Supabase - Database as a service
+{$SUPABASE_HOSTNAME} {
+    reverse_proxy kong:8000 {
+        header_up Host {upstream_hostport}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-For {remote_host}
+    }
+}
+
+# SearXNG - Private search engine
+{$SEARXNG_HOSTNAME} {
+    encode zstd gzip
+
+    @api {
+        path /config
+        path /healthz
+        path /stats/errors
+        path /stats/checker
+    }
+    @search {
+        path /search
+    }
+    @imageproxy {
+        path /image_proxy
+    }
+    @static {
+        path /static/*
+    }
+
+    header {
+        # Security headers for SearXNG
+        Content-Security-Policy "upgrade-insecure-requests; default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; form-action 'self'; font-src 'self'; frame-ancestors 'self'; base-uri 'self'; connect-src 'self' https:; img-src 'self' data: https:; frame-src https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com https://www.deezer.com https://www.mixcloud.com https://w.soundcloud.com https://embed.spotify.com"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        X-Download-Options "noopen"
+        X-Robots-Tag "noindex, nofollow"
+        Referrer-Policy "no-referrer"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "DENY"
+    }
+
+    reverse_proxy searxng:8080 {
+        header_up Host {upstream_hostport}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Script-Name ""
+    }
+}
+
+# =============================================================================
+# Configuración adicional (opcional)
+# Descomenta y configura según necesidades específicas
+# =============================================================================
+
+# # Redirección WWW a no-WWW
+# www.{$CLOUDFLARE_DOMAIN} {
+#     redir https://{$CLOUDFLARE_DOMAIN}{uri}
+# }
+
+# # Página principal del dominio (opcional)
+# {$CLOUDFLARE_DOMAIN} {
+#     respond "Stack AI Local - Servicios disponibles en subdominios" 200
+# }
